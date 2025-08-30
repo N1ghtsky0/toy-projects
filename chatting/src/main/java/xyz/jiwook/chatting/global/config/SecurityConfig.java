@@ -16,7 +16,22 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(config -> config.ignoringRequestMatchers("/api/v1/**"))
-                .authorizeHttpRequests(requests -> requests.anyRequest().permitAll());
+                .formLogin(config -> config
+                        .loginPage("/login")
+                        .usernameParameter("username")
+                        .passwordParameter("password")
+                        .defaultSuccessUrl("/")
+                        .failureUrl("/login?fail")
+                        .permitAll()
+                ).rememberMe(config -> config
+                        .key("remember-me-key")
+                        .rememberMeParameter("remember-me")
+                        .tokenValiditySeconds(60 * 60 * 24 * 7)
+                ).logout(config -> config
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/")
+                        .deleteCookies("JSESSIONID")
+                ).authorizeHttpRequests(requests -> requests.anyRequest().permitAll());
         return http.build();
     }
 

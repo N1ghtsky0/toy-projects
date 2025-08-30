@@ -16,4 +16,9 @@ public class AuthController {
     public String displayRegisterPage() {
         return "auth/register";
     }
+
+    @GetMapping("/login")
+    public String displayLoginPage() {
+        return "auth/login";
+    }
 }
