@@ -9,7 +9,7 @@
 <body>
 <div class="container">
   <div class="row">
-    <div class="col-3 wrapper p-2">
+    <div class="col-3 wrapper p-2 align-self-start">
       <div sec:authorize="isAnonymous()">
         <form id="login-form" th:action="@{/login}" method="post" class="mb-3">
           <div class="mb-3">
@@ -61,6 +61,20 @@
       <div class="wrapper p-2">
         <h3>채팅방 목록</h3>
         <hr/>
+        <div class="row">
+          <div class="col-4 p-2" th:each="room: ${chatRooms}">
+            <div class="card text-center">
+              <h5 class="card-header" th:text="${room.private} ? '비공개' : '공개'"></h5>
+              <div class="card-body">
+                <h5 class="card-title" th:text="${room.name}"></h5>
+                <button class="btn btn-sm btn-outline-primary" th:attr="room-id=${room.id}" onclick="tryEnterRoom(this)">입장하기</button>
+              </div>
+              <div class="card-footer">
+                참가인원 / 전체인원 (예정)
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
