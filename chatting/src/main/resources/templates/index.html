@@ -80,6 +80,7 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
   const usernameInputEl = document.getElementById('username');
   const passwordInputEl = document.getElementById('password');
@@ -97,6 +98,99 @@
       alert("비밀번호는 필수값입니다.");
     }
   })
+
+  async function tryEnterRoom(el) {
+    const roomId = el.getAttribute("room-id");
+    try {
+      const res = await fetch(`/api/v1/chat-rooms/${encodeURIComponent(roomId)}/check`);
+      const data = await res.json();
+
+      if (!data.result) {
+        Swal.fire({
+          title: "입장 불가능한 채팅방입니다.",
+          icon: "error"
+        });
+        return;
+      }
+
+      if (!data.private) {
+        enterRoom(roomId, data._csrf);
+      } else {
+        await promptPasswordAndVerify(roomId);
+      }
+    } catch (error) {
+      console.error("API 호출 실패:", error);
+      Swal.fire({
+        title: "오류가 발생했습니다.",
+        icon: "warning"
+      });
+    }
+  }
+
+  // 2. 비밀방 비밀번호 입력 & 검증 함수
+  async function promptPasswordAndVerify(roomId) {
+    Swal.fire({
+      title: "비밀번호를 입력하세요.",
+      input: "text",
+      inputAttributes: {
+        autocapitalize: "off",
+        autocomplete: "off",
+      },
+      showCancelButton: true,
+      cancelButtonText: "취소",
+      confirmButtonText: "확인",
+      showLoaderOnConfirm: true,
+      preConfirm: async (password) => {
+        try {
+          const res = await fetch(`/api/v1/chat-rooms/${encodeURIComponent(roomId)}/verify-password`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ "password": password })
+          });
+
+          const data = await res.json();
+
+          if (data.result) {
+            enterRoom(roomId, data._csrf);
+          } else {
+            Swal.fire({
+              title: "비밀번호가 올바르지 않습니다.",
+              icon: "error"
+            });
+          }
+        } catch (error) {
+          console.error("API 호출 실패:", error);
+          Swal.fire({
+            title: "비밀번호 검증 중 오류가 발생했습니다.",
+            icon: "warning"
+          });
+        }
+      },
+      allowOutsideClick: () => !Swal.isLoading()
+    })
+  }
+
+  // 3. 실제 입장 로직 (페이지 이동 or WebSocket 연결 등)
+  function enterRoom(roomId, _csrf) {
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "/chat";
+
+    const roomIdInput = document.createElement("input");
+    roomIdInput.type = "hidden";
+    roomIdInput.name = "roomId";
+    roomIdInput.value = roomId;
+    form.appendChild(roomIdInput);
+
+    const _csrfInput = document.createElement("input");
+    _csrfInput.type = "hidden";
+    _csrfInput.name = "_csrf";
+    _csrfInput.value = _csrf;
+    form.appendChild(_csrfInput);
+
+    document.body.appendChild(form);
+    form.submit();
+  }
 </script>
 </body>
 </html>
