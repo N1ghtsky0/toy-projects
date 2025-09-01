@@ -16,6 +16,8 @@
       .message-content { display: inline-block; padding: 0.5rem 0.75rem; border-radius: 1rem; max-width: 70%; }
       .message.me .message-content { background-color: #0d6efd; color: white; }
       .message.other .message-content { background-color: #e9ecef; }
+      .message.alert { width: 100%; text-align: center; }
+      .message.alert .message-content { font-size: 0.8rem; color: #495057; background-color: #e9ecef; }
       .chat-messages::-webkit-scrollbar { width: 6px; }
       .chat-messages::-webkit-scrollbar-thumb { background-color: #adb5bd; border-radius: 3px; }
   </style>
@@ -42,6 +44,9 @@
       <div class="message-content">좋아요! JWT 토큰 관련 질문이 있습니다.</div>
       <small class="text-muted">10:01</small>
     </div>
+    <div class="message alert">
+      <div class="message-content">user 님이 입장하셨습니다.</div>
+    </div>
     <div class="message other">
       <div class="message-content">그럼 오늘은 토이 프로젝트 중심으로 진행해볼까요?</div>
       <small class="text-muted">10:02</small>
@@ -62,5 +67,54 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<script th:inline="javascript">
+  const roomId = [[${roomInfo.roomId}]];
+  const socket = new SockJS("/ws");
+  const stompClient = Stomp.over(socket);
+  stompClient.debug = null;
+
+  stompClient.connect({}, function (frame) {
+      stompClient.subscribe(`/topic/chat/${roomId}`, function (message) {
+          const chatMessage = JSON.parse(message.body);
+          appendMessage(chatMessage);
+      })
+      stompClient.send("/app/chat/enter", {}, chatMessage(""))
+  })
+
+  function chatMessage(msg) {
+    return JSON.stringify({
+      "roomId": roomId,
+      "senderId": [[${#authentication.getName()}]],
+      "message": msg
+    })
+  }
+
+  function appendMessage(chatMessage) {
+      const chatBox = document.querySelector(".chat-messages");
+
+      let messageDiv = document.createElement("div");
+      messageDiv.classList.add("message")
+
+      switch (chatMessage.type) {
+          case "ENTER":
+              messageDiv.classList.add("alert");
+              break;
+          default:
+              messageDiv.classList.add("other");
+              break;
+      }
+
+      const messageContentDiv = document.createElement("div");
+      messageContentDiv.classList.add("message-content");
+      messageContentDiv.textContent = chatMessage.message;
+
+      messageDiv.appendChild(messageContentDiv);
+
+      chatBox.appendChild(messageDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+  }
+</script>
 </body>
 </html>
