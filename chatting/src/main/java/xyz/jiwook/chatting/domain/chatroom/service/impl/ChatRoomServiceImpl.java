@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import xyz.jiwook.chatting.domain.chatroom.entity.ChatRoomEntity;
 import xyz.jiwook.chatting.domain.chatroom.repository.ChatRoomJpaRepo;
 import xyz.jiwook.chatting.domain.chatroom.service.ChatRoomService;
+import xyz.jiwook.chatting.domain.chatroom.vo.ChatRoomInfoVO;
 
 import java.util.HashMap;
 import java.util.List;
@@ -35,5 +36,12 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         return chatRoomJpaRepo.findById(chatRoomId)
                 .map(chatRoomEntity -> chatRoomEntity.getPassword().equals(password))
                 .orElse(false);
+    }
+
+    @Override
+    public ChatRoomInfoVO getChatRoomInfo(String roomId) {
+        return chatRoomJpaRepo.findById(roomId)
+                .map(ChatRoomInfoVO::new)
+                .orElse(null);
     }
 }
