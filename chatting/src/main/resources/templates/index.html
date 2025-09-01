@@ -81,7 +81,7 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
+<script sec:authorize="${isAnonymous()}">
   const usernameInputEl = document.getElementById('username');
   const passwordInputEl = document.getElementById('password');
 
@@ -98,7 +98,8 @@
       alert("비밀번호는 필수값입니다.");
     }
   })
-
+</script>
+<script>
   async function tryEnterRoom(el) {
     const roomId = el.getAttribute("room-id");
     try {
