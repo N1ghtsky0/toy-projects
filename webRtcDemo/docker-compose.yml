@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  kurento-media-server:
+    container_name: kurento-media-server
+    image: kurento/kurento-media-server:7.2.0
+    ports:
+      - 8888:8888/tcp
+      - 5000-5050:5000-5050/udp
+    environment:
+      - KMS_MIN_PORT=5000
+      - KMS_MAX_PORT=5050
+      - KMS_STUN_IP=stun.l.google.com
+      - KMS_STUN_PORT=19302
+      - KMS_EXTERNAL_IPV4=192.168.0.157
+      - TZ=Asia/Seaol
+  webapp:
+    image: webrtc-demo:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - kurento-media-server
+    ports:
+      - 8080:8080
+    environment:
+      - KMS_URL=ws://192.168.0.157:8888/kurento
