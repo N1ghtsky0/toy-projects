@@ -27,6 +27,25 @@ ws.onmessage = function (e) {
         });
       }
       break;
+    case 'viewerOffer':
+      pc = createRTCPeerConnection(false);
+      pc.createOffer().then(offer => {
+        pc.setLocalDescription(offer).then(() => {
+          const obj = {
+            id: 'viewer',
+            sdpOffer: offer
+          }
+          send(obj);
+        });
+      })
+      break;
+    case 'viewerAnswer':
+      if (jsonData.result === 'accepted') {
+        pc.setRemoteDescription(new RTCSessionDescription({sdp: jsonData.sdpAnswer, type: "answer"})).then(() => {
+          console.log('answer - setRemoteDescription');
+        });
+      }
+      break;
     default:
       console.log(jsonData);
       break;
@@ -43,6 +62,9 @@ ws.onerror = function (e) {
 
 function createRTCPeerConnection(isPresenter = false) {
   const pc = new RTCPeerConnection(pcConfig);
+
+  pc.addTransceiver('video', {direction: isPresenter ? 'sendonly' : 'recvonly'});
+  pc.addTransceiver('audio', {direction: isPresenter ? 'sendonly' : 'recvonly'});
 
   try {
     pc.addEventListener('icecandidate', (e) => {
@@ -89,8 +111,6 @@ async function startBroadcast() {
   localVideoEl.srcObject = localStream;
 
   pc = createRTCPeerConnection(true);
-  pc.addTransceiver('video', {direction: 'sendonly'});
-  pc.addTransceiver('audio', {direction: 'sendonly'});
   pc.createOffer().then(offer => {
     pc.setLocalDescription(offer).then(() => {
       const obj = {

@@ -34,6 +34,9 @@ public class KurentoHandler extends TextWebSocketHandler {
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         if (!participants.containsKey(session.getId())) {
             participants.put(session.getId(), new KurentoUserSession(session));
+            if (!presenterId.isEmpty()) {
+                requestViewerOffer(participants.get(session.getId()).getSession());
+            }
         }
     }
 
@@ -51,6 +54,10 @@ public class KurentoHandler extends TextWebSocketHandler {
         switch (id) {
             case "presenter":
                 handlePresenter(session, jsonMessage);
+                if (!presenterId.isEmpty()) { requestViewerOffer(); }
+                break;
+            case "viewer":
+                handleViewer(session, jsonMessage);
                 break;
             case "icecandidate":
                 JsonObject candidate = jsonMessage.get("result").getAsJsonObject();
@@ -63,6 +70,20 @@ public class KurentoHandler extends TextWebSocketHandler {
                 log.warn("[UNKNOWN MESSAGE] {}", jsonMessage);
                 break;
         }
+    }
+
+    private synchronized void requestViewerOffer() {
+        participants.forEach((viewerId, viewerSession) -> {
+            if (!viewerId.equals(presenterId)) {
+                requestViewerOffer(viewerSession.getSession());
+            }
+        });
+    }
+
+    private synchronized void requestViewerOffer(WebSocketSession session) {
+        JsonObject response = new JsonObject();
+        response.addProperty("id", "viewerOffer");
+        sendMessage(response.toString(), session);
     }
 
     private synchronized void handlePresenter(WebSocketSession session, JsonObject message) {
@@ -97,6 +118,32 @@ public class KurentoHandler extends TextWebSocketHandler {
             response.addProperty("reason", "already has presenter");
             sendMessage(response.toString(), session);
         }
+    }
+
+    private synchronized void handleViewer(WebSocketSession session, JsonObject message) {
+        JsonObject response = new JsonObject();
+        response.addProperty("id", "viewerAnswer");
+
+        KurentoUserSession viewer = participants.get(session.getId());
+        WebRtcEndpoint viewerWebRtcEndpoint = new WebRtcEndpoint.Builder(pipeline).build();
+        viewerWebRtcEndpoint.addIceCandidateFoundListener(event -> {
+            JsonObject result = new JsonObject();
+            result.addProperty("id", "icecandidate");
+            result.add("result", JsonUtils.toJsonObject(event.getCandidate()));
+            sendMessage(result.toString(), viewer.getSession());
+        });
+
+        viewer.setWebRtcEndpoint(viewerWebRtcEndpoint);
+        participants.get(presenterId).getWebRtcEndpoint().connect(viewerWebRtcEndpoint);
+
+        String viewerOffer = message.get("sdpOffer").getAsJsonObject().get("sdp").getAsString();
+        String answerFromKMS = viewerWebRtcEndpoint.processOffer(viewerOffer);
+
+        response.addProperty("result", "accepted");
+        response.addProperty("sdpAnswer", answerFromKMS);
+        sendMessage(response.toString(), viewer.getSession());
+
+        viewerWebRtcEndpoint.gatherCandidates();
     }
 
     private synchronized void sendMessage(String message, WebSocketSession session) {
