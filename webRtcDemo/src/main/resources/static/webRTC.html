@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>화상회의 방송 테스트</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    video {
+      width: 480px;
+      height: 360px;
+      background: #000;
+      margin-bottom: 10px;
+    }
+    button {
+      margin-right: 10px;
+      padding: 8px 16px;
+    }
+    #attendees {
+      margin-top: 20px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      width: 300px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>🎥 화상회의 방송 테스트</h2>
+
+<video id="localVideo" autoplay muted playsinline></video><br>
+
+<button onclick="startBroadcast()">방송 시작</button>
+<button onclick="stopBroadcast()">방송 종료</button>
+
+<div id="attendees">
+  <strong>참석자 명단</strong>
+  <ul id="attendeeList">
+    <li>홍길동</li>
+    <li>김철수</li>
+    <li>이영희</li>
+  </ul>
+</div>
+<script src="/js/webRtc.js"></script>
+</body>
+</html>
