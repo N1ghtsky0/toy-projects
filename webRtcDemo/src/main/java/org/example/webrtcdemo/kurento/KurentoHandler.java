@@ -42,6 +42,7 @@ public class KurentoHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+        stop(participants.get(session.getId()));
         participants.remove(session.getId());
     }
 
@@ -65,6 +66,9 @@ public class KurentoHandler extends TextWebSocketHandler {
 
                 KurentoUserSession userSession = participants.get(session.getId());
                 userSession.addCandidate(iceCandidate);
+                break;
+            case "stop":
+                stop(participants.get(session.getId()));
                 break;
             default:
                 log.warn("[UNKNOWN MESSAGE] {}", jsonMessage);
@@ -144,6 +148,29 @@ public class KurentoHandler extends TextWebSocketHandler {
         sendMessage(response.toString(), viewer.getSession());
 
         viewerWebRtcEndpoint.gatherCandidates();
+    }
+
+    private synchronized void stop(KurentoUserSession userSession) {
+        final String sessionId = userSession.getSession().getId();
+        if (sessionId.equals(presenterId)) {
+            for (KurentoUserSession participant : participants.values()) {
+                if (!presenterId.equals(participant.getSession().getId())) {
+                    JsonObject response = new JsonObject();
+                    response.addProperty("id", "viewerStop");
+                    sendMessage(response.toString(), participant.getSession());
+                }
+            }
+            if (pipeline != null) {
+                pipeline.release();
+            }
+            pipeline = null;
+            presenterId = "";
+        } else if (participants.containsKey(sessionId)) {
+            if (userSession.getWebRtcEndpoint() != null) {
+                userSession.getWebRtcEndpoint().release();
+            }
+        }
+
     }
 
     private synchronized void sendMessage(String message, WebSocketSession session) {

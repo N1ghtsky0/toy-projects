@@ -46,6 +46,9 @@ ws.onmessage = function (e) {
         });
       }
       break;
+    case 'viewerStop':
+      stopBroadcast();
+      break;
     default:
       console.log(jsonData);
       break;
@@ -119,5 +122,16 @@ async function startBroadcast() {
       }
       send(obj);
     });
+  })
+}
+
+function stopBroadcast() {
+  if (pc) {
+    pc.close();
+    pc = null;
+    localVideoEl.srcObject = null;
+  }
+  send({
+    id: 'stop',
   })
 }
