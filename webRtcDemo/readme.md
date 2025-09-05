@@ -9,6 +9,8 @@
 
 # 실행방법
 
+* 웹캠 또는 카메라 둘 중 하나는 필수적으로 pc와 연결되어 있어야합니다.
+  * 연결된 기기에 따라 /src/main/resources/static/js/*.js 속 <br> "localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true } );" <br>코드 수정 필요
 * 도커가 설치되어 있어야합니다.
 
 ``` bash
